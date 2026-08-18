@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: shopnexa
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: CREDENTIAL_RESET_TOKEN
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      # Database selection is automatic in db.py:
+      # DATABASE_URL present -> PostgreSQL
+      # otherwise on Render -> SQLite at /var/data/shop.db
+      # locally -> SQLite at ./data/shop.db
+      - key: RENDER
+        value: "true"
+      - key: DATA_DIR
+        value: /var/data
+      - key: DATABASE_PATH
+        value: /var/data/shop.db
+      - key: OWNER_PASSWORD
+        sync: false
+      - key: MANAGER_PASSWORD
+        sync: false
+      - key: EMPLOYEE_PASSWORD
+        sync: false
