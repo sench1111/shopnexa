@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='csrf.js') }}"></script>
+<title>{{ settings.shop_name }} — Receipt</title>
+<style>
+    :root {
+        --bg: #05070a; --card: #12181a; --orange: #f0a63e; --orange-light: #f7c169;
+        --text: #f0ece1; --muted: #9a9689; --border: rgba(245, 239, 227, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; font-family: 'Segoe UI', Arial, sans-serif; color: var(--text);
+        background: radial-gradient(circle at 15% 0%, #0f1d1b 0%, #05070a 45%), var(--bg);
+        padding: 1.5rem 1rem 4rem; display: flex; justify-content: center;
+    }
+    .back-link { color: var(--muted); text-decoration: none; font-size: 0.85rem; display: block; margin-bottom: 1rem; }
+    .wrap { max-width: 340px; width: 100%; }
+    .receipt {
+        background: #fdfcf8; color: #1a1a1a; border-radius: 10px; padding: 1.5rem 1.4rem;
+        font-family: 'Courier New', monospace; box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+    .shop-name { text-align: center; font-weight: 700; font-size: 1.15rem; margin-bottom: 0.15rem; }
+    .meta { text-align: center; font-size: 0.72rem; color: #555; margin-bottom: 0.9rem; }
+    .divider { border-top: 1px dashed #999; margin: 0.7rem 0; }
+    .line { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.3rem; }
+    .line .name { flex: 1; padding-right: 0.5rem; }
+    .qty { color: #666; font-size: 0.78rem; }
+    .total-row { display: flex; justify-content: space-between; font-weight: 700; font-size: 1rem; margin-top: 0.5rem; }
+    .thanks { text-align: center; font-size: 0.75rem; color: #777; margin-top: 1rem; }
+    .actions { display: flex; gap: 0.6rem; margin-top: 1.2rem; }
+    button.primary {
+        flex: 1; padding: 0.7rem; border: none; border-radius: 999px; background: var(--orange);
+        color: #1c1305; font-weight: 700; font-size: 0.88rem; cursor: pointer;
+    }
+    #error-note { color: #fca5a5; text-align: center; padding: 2rem 0; display: none; }
+
+    @media print {
+        body { background: none; padding: 0; display: block; }
+        .back-link, .actions { display: none !important; }
+        .receipt { box-shadow: none; }
+    }
+</style>
+</head>
+<body>
+<div class="wrap">
+    <a href="{{ url_for('history') }}" class="back-link">← Back to history</a>
+    <div id="receipt-box" class="receipt" style="display:none;">
+        <div class="shop-name" id="r-shop"></div>
+        <div class="meta" id="r-meta"></div>
+        <div class="divider"></div>
+        <div id="r-lines"></div>
+        <div class="divider"></div>
+        <div class="total-row"><span>TOTAL</span><span id="r-total"></span></div>
+        <div class="thanks">Thank you for your business!</div>
+    </div>
+    <p id="error-note">Receipt not found.</p>
+    <div class="actions">
+        <button class="primary" onclick="window.print()">🖨 Print receipt</button>
+    </div>
+</div>
+
+<script>
+const receiptId = {{ receipt_id | tojson }};
+
+async function loadReceipt() {
+    try {
+        const res = await fetch(`/api/receipt/${escapeHtml(receiptId)}`);
+        if (res.status === 401) { window.location.href = '/login'; return; }
+        if (!res.ok) { document.getElementById('error-note').style.display = 'block'; return; }
+        const r = await res.json();
+        renderReceipt(r);
+    } catch (err) {
+        document.getElementById('error-note').style.display = 'block';
+    }
+}
+
+function renderReceipt(r) {
+    document.getElementById('r-shop').textContent = r.shop_name;
+    document.getElementById('r-meta').textContent = `${escapeHtml(r.ts)} · Served by ${escapeHtml(r.cashier || 'staff')} · #${escapeHtml(r.receipt_id)}`;
+    document.getElementById('r-lines').innerHTML = r.lines.map(l => `
+        <div class="line">
+            <span class="name">${escapeHtml(l.item)} <span class="qty">×${l.quantity}</span></span>
+            <span>${escapeHtml(r.currency)} ${l.line_total.toFixed(2)}</span>
+        </div>`).join('');
+    document.getElementById('r-total').textContent = `${escapeHtml(r.currency)} ${r.total.toFixed(2)}`;
+    document.getElementById('receipt-box').style.display = 'block';
+}
+
+loadReceipt();
+</script>
+</body>
+</html>

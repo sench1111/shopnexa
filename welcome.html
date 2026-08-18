@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="ShopNexa is a simple retail sales, inventory and business reporting system for growing shops.">
+<title>ShopNexa — Retail Management Made Simple</title>
+<style>
+:root{--bg:#05070a;--card:#12181a;--teal:#17322f;--teal2:#1f3d39;--gold:#f0a63e;--gold2:#f7c169;--text:#f0ece1;--muted:#aaa596;--border:rgba(245,239,227,.1);--green:#34d399}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0%,#10211e 0,#05070a 48%),#05070a;color:var(--text);font-family:Inter,'Segoe UI',Arial,sans-serif}
+.wrap{max-width:1080px;margin:auto;padding:24px 20px 70px}.nav{display:flex;justify-content:space-between;align-items:center;gap:16px}.brand{display:flex;align-items:center;gap:10px}.brand img{width:42px;height:42px;border-radius:12px}.brand b{font-family:Georgia,serif;font-size:1.15rem}.brand small{display:block;color:var(--muted);font-size:.65rem;letter-spacing:.12em;text-transform:uppercase}
+.btn{display:inline-block;padding:11px 18px;border-radius:999px;text-decoration:none;font-weight:700;font-size:.88rem}.btn.primary{background:var(--gold);color:#1c1305}.btn.secondary{border:1px solid var(--border);color:var(--text);background:rgba(255,255,255,.03)}
+.hero{text-align:center;padding:86px 10px 55px}.eyebrow{text-transform:uppercase;letter-spacing:.16em;font-size:.7rem;font-weight:800;color:var(--gold2)}h1{font-family:Georgia,serif;font-size:clamp(2.5rem,7vw,5rem);line-height:1.02;margin:14px auto 18px;max-width:850px}h1 span{color:var(--gold2)}.hero p{max-width:680px;margin:0 auto 28px;color:var(--muted);font-size:1.05rem;line-height:1.7}.actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.preview{margin:0 auto;max-width:900px;background:linear-gradient(150deg,var(--teal2),var(--teal));border:1px solid rgba(247,193,105,.13);border-radius:24px;padding:22px;box-shadow:0 30px 80px rgba(0,0,0,.45)}.window{background:#0b1011;border:1px solid var(--border);border-radius:16px;overflow:hidden;text-align:left}.bar{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--muted);font-size:.75rem}.mock{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;padding:16px}.mockcard{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:18px}.mockcard h3{margin:0 0 8px;font-size:.9rem}.big{font-family:Georgia,serif;font-size:2rem;color:var(--gold2)}.pill{display:inline-block;margin-top:10px;padding:5px 9px;border-radius:999px;background:rgba(52,211,153,.1);color:#6ee7b7;font-size:.68rem}
+.section{padding:70px 0}.section h2{font-family:Georgia,serif;font-size:2rem;text-align:center;margin:0 0 10px}.section>p{text-align:center;color:var(--muted);max-width:650px;margin:0 auto 30px;line-height:1.6}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.feature{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px}.feature .icon{font-size:1.4rem;margin-bottom:12px}.feature h3{margin:0 0 7px;font-size:.98rem}.feature p{margin:0;color:var(--muted);font-size:.84rem;line-height:1.55}.cta{text-align:center;background:linear-gradient(150deg,var(--teal2),var(--teal));border:1px solid rgba(247,193,105,.12);border-radius:22px;padding:48px 20px}.cta h2{font-family:Georgia,serif;font-size:2rem;margin:0 0 10px}.cta p{color:var(--muted);margin:0 auto 22px;max-width:600px}
+footer{text-align:center;color:#777266;font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;padding-top:30px}
+@media(max-width:700px){.mock{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.hero{padding-top:60px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="nav"><div class="brand"><img src="{{ url_for('static', filename='logo.svg') }}"><div><b>ShopNexa</b><small>Retail management</small></div></div><a class="btn secondary" href="{{ url_for('login') }}">Sign in</a></nav>
+<section class="hero">
+<div class="eyebrow">Built for growing shops</div>
+<h1>Run your shop with <span>clarity.</span></h1>
+<p>ShopNexa brings sales, products, stock, expenses, receipts and business reporting into one focused workspace — simple enough for a small shop and ready to grow with it.</p>
+<div class="actions"><a class="btn primary" href="{{ url_for('login') }}">Open the demo</a><a class="btn secondary" href="#features">Explore features</a></div>
+</section>
+<div class="preview"><div class="window"><div class="bar">ShopNexa · Business dashboard · Live workspace</div><div class="mock"><div class="mockcard"><h3>Today's sales</h3><div class="big">GHS 4,850</div><span class="pill">● Live summary</span></div><div class="mockcard"><h3>Business at a glance</h3><p style="color:#aaa596;font-size:.82rem;line-height:1.6;margin:0">Track products, sales history, expenses, profit and staff activity from one place.</p></div></div></div></div>
+<section class="section" id="features"><h2>Everything your shop needs</h2><p>A practical retail toolkit focused on the daily tasks that matter most.</p>
+<div class="grid">
+<div class="feature"><div class="icon">▣</div><h3>Fast sales recording</h3><p>Record sales and generate receipt records while keeping the workflow simple for staff.</p></div>
+<div class="feature"><div class="icon">◈</div><h3>Products & stock</h3><p>Manage products, selling prices, cost prices, quantities and low-stock thresholds.</p></div>
+<div class="feature"><div class="icon">◒</div><h3>Profit & reports</h3><p>Review sales, expenses and profit information through built-in reporting tools.</p></div>
+<div class="feature"><div class="icon">▤</div><h3>Expense tracking</h3><p>Keep operating expenses such as transport, rent, supplies and staff payments in one place.</p></div>
+<div class="feature"><div class="icon">♙</div><h3>Staff access</h3><p>Separate employee, manager and owner roles help keep sensitive business controls protected.</p></div>
+<div class="feature"><div class="icon">⇩</div><h3>Data exports</h3><p>Export sales, inventory, staff, expenses and profit information for further analysis.</p></div>
+</div></section>
+<section class="cta"><h2>Turn daily shop activity into useful business information.</h2><p>Use the live demo to experience the workflow, then customize the branding, users and business settings for your shop.</p><a class="btn primary" href="{{ url_for('login') }}">Try ShopNexa</a></section>
+<footer>ShopNexa · Retail management platform</footer>
+</div>
+</body></html>

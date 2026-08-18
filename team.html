@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='csrf.js') }}"></script>
+<title>{{ settings.shop_name }} — Team</title>
+<style>
+    :root {
+        --bg: #05070a; --card: #10161c; --blue-deep: #12283a; --blue-soft: #163650;
+        --blue: #4da3e0; --blue-light: #7cc4f2; --text: #f0ece1; --muted: #9a9689;
+        --border: rgba(124, 196, 242, 0.1); --red: #f87171; --green: #34d399;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; font-family: 'Segoe UI', Arial, sans-serif; color: var(--text);
+        background: radial-gradient(circle at 85% 0%, #10222f 0%, #05070a 45%), var(--bg);
+        padding: 1.5rem 1rem 4rem;
+    }
+    .container { max-width: 760px; margin: 0 auto; }
+    header { margin-bottom: 1.25rem; }
+    .back-link { color: var(--muted); text-decoration: none; font-size: 0.85rem; }
+    .back-link:hover { color: var(--text); }
+    .owner-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.7rem 0 0.2rem; }
+    .owner-nav a {
+        font-size: 0.76rem; color: var(--muted); text-decoration: none; border: 1px solid var(--border);
+        border-radius: 999px; padding: 0.32rem 0.7rem;
+    }
+    .owner-nav a:hover { background: rgba(124,196,242,0.08); color: var(--text); }
+    .eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.7rem; font-weight: 700; color: var(--blue-light); margin: 0.8rem 0 0.4rem; }
+    h1.page-title { font-family: Georgia, serif; font-size: 1.7rem; margin: 0.2rem 0 0.3rem; }
+    .subtitle { color: var(--muted); font-size: 0.88rem; margin: 0 0 1.5rem; }
+
+    .msg { padding: 0.7rem 0.9rem; border-radius: 10px; font-size: 0.85rem; margin-bottom: 1.2rem; }
+    .msg.error { background: rgba(248,113,113,0.12); color: #fca5a5; border: 1px solid rgba(248,113,113,0.3); }
+    .msg.success { background: rgba(77,163,224,0.14); color: var(--blue-light); border: 1px solid rgba(77,163,224,0.35); }
+
+    .hero {
+        background: linear-gradient(155deg, var(--blue-soft), var(--blue-deep) 75%);
+        border-radius: 20px; padding: 1.5rem 1.5rem 1.3rem; margin-bottom: 1.2rem;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(124,196,242,0.08);
+    }
+    .hero h2 { font-family: Georgia, serif; font-size: 1.5rem; margin: 0 0 0.5rem; }
+    .hero p { color: #b9d3e6; font-size: 0.88rem; line-height: 1.5; margin: 0; max-width: 480px; }
+
+    .card {
+        background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+        padding: 1.5rem; margin-bottom: 1.2rem;
+    }
+    .card h2 { font-family: Georgia, serif; font-size: 1.2rem; margin: 0 0 0.3rem; }
+    .card .desc { color: var(--muted); font-size: 0.85rem; margin: 0 0 1.2rem; }
+
+    label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.3rem; }
+    .field { margin-bottom: 0.9rem; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    input {
+        width: 100%; padding: 0.65rem 0.8rem; border: 1px solid var(--border); border-radius: 10px;
+        background: #0a1016; font-size: 0.9rem; color: var(--text);
+    }
+    input:focus { outline: none; border-color: var(--blue); }
+    button.primary {
+        padding: 0.7rem 1.2rem; border: none; border-radius: 999px; background: var(--blue);
+        color: #061420; font-weight: 700; font-size: 0.88rem; cursor: pointer; margin-top: 0.3rem;
+    }
+    button.primary:hover { background: var(--blue-light); }
+    button.danger-btn {
+        padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid rgba(248,113,113,0.35);
+        background: rgba(248,113,113,0.08); color: #fca5a5; font-size: 0.78rem; cursor: pointer;
+    }
+    button.danger-btn:hover { background: rgba(248,113,113,0.18); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.6rem 0.5rem; text-align: left; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .role-pill {
+        font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700;
+        padding: 0.2rem 0.55rem; border-radius: 999px; color: var(--blue-light); background: rgba(77,163,224,0.14);
+    }
+    .status-pill { font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 999px; }
+    .status-pill.success { color: var(--green); background: rgba(52,211,153,0.12); }
+    .status-pill.fail { color: var(--red); background: rgba(248,113,113,0.12); }
+    .empty-note { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 1.5rem 0; }
+    .scroll-table { max-height: 320px; overflow-y: auto; }
+    .note-box {
+        background: rgba(77,163,224,0.06); border: 1px dashed rgba(124,196,242,0.25);
+        border-radius: 12px; padding: 0.8rem 1rem; font-size: 0.8rem; color: #b9d3e6; margin-bottom: 1.2rem;
+    }
+
+    footer { text-align: center; margin-top: 2rem; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <a href="{{ url_for('index') }}" class="back-link">← Back to the desk</a>
+        <p class="eyebrow">Manager Access</p>
+        <h1 class="page-title">Team</h1>
+        <div class="owner-nav">
+            <a href="{{ url_for('index') }}">Desk</a>
+            <a href="{{ url_for('history') }}">History</a>
+            <a href="{{ url_for('team_dashboard') }}">Team</a>
+            {% if user.role == 'owner' %}
+            <a href="{{ url_for('products_page') }}">Products</a>
+            <a href="{{ url_for('expenses_page') }}">Expenses</a>
+            <a href="{{ url_for('staff_page') }}">Staff</a>
+            <a href="{{ url_for('reports_page') }}">Reports</a>
+            <a href="{{ url_for('backstage') }}">Backstage</a>
+            {% endif %}
+        </div>
+    </header>
+
+    {% if error %}<div class="msg error">{{ error }}</div>{% endif %}
+    {% if success %}<div class="msg success">{{ success }}</div>{% endif %}
+
+    <div class="hero">
+        <h2>Keep an eye on the floor.</h2>
+        <p>Add and remove employee accounts, and see what the team has been doing — signed in as {{ current_username }}. Owner-level activity stays private to the owner.</p>
+    </div>
+
+    <!-- Employees -->
+    <div class="card">
+        <h2>Employees</h2>
+        <p class="desc">Accounts with front-line access: recording sales, viewing history, downloading reports.</p>
+
+        {% if employees %}
+        <table>
+            <thead><tr><th>Username</th><th>Name</th><th>Role</th><th></th></tr></thead>
+            <tbody>
+                {% for uname, info in employees.items() %}
+                <tr>
+                    <td>{{ uname }}</td>
+                    <td>{{ info.display_name }}</td>
+                    <td><span class="role-pill">employee</span></td>
+                    <td>
+                        <form method="POST" action="{{ url_for('team_remove_employee') }}" onsubmit="return confirm('Remove {{ uname }}? This cannot be undone.');" style="display:inline;">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="username" value="{{ uname }}">
+                            <button type="submit" class="danger-btn">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="empty-note">No employee accounts yet — add one below.</p>
+        {% endif %}
+
+        <h2 style="margin-top:1.5rem;">Add an employee</h2>
+        <p class="desc">New accounts created here are always employee-level — a manager can't create manager or owner accounts. That needs Backstage.</p>
+        <form method="POST" action="{{ url_for('team_add_employee') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field-row">
+                <div class="field">
+                    <label for="new_username">Username</label>
+                    <input type="text" id="new_username" name="new_username" required>
+                </div>
+                <div class="field">
+                    <label for="new_display_name">Display name</label>
+                    <input type="text" id="new_display_name" name="new_display_name">
+                </div>
+            </div>
+            <div class="field">
+                <label for="new_password">Password</label>
+                <input type="password" id="new_password" name="new_password" minlength="6" required>
+            </div>
+            <button type="submit" class="primary">Add employee</button>
+        </form>
+    </div>
+
+    <!-- Team activity -->
+    <div class="card">
+        <h2>Team activity</h2>
+        <p class="desc">What the team has been doing while signed in.</p>
+        <div class="note-box">The owner's own activity isn't shown here — that stays visible to the owner only, in Backstage.</div>
+
+        {% if recent_activity %}
+        <div class="scroll-table">
+            <table>
+                <thead><tr><th>Time</th><th>User</th><th>Action</th></tr></thead>
+                <tbody>
+                    {% for entry in recent_activity %}
+                    <tr>
+                        <td>{{ entry.ts }}</td>
+                        <td>{{ entry.display_name }}</td>
+                        <td>{{ entry.action }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty-note">No team activity recorded yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Team sign-ins -->
+    <div class="card">
+        <h2>Team sign-ins</h2>
+        <p class="desc">Login attempts from the team — successful or not.</p>
+
+        {% if recent_logins %}
+        <div class="scroll-table">
+            <table>
+                <thead><tr><th>Time</th><th>Username</th><th>Result</th><th>IP</th></tr></thead>
+                <tbody>
+                    {% for entry in recent_logins %}
+                    <tr>
+                        <td>{{ entry.time }}</td>
+                        <td>{{ entry.username }}</td>
+                        <td>
+                            {% if entry.success %}
+                            <span class="status-pill success">Success</span>
+                            {% else %}
+                            <span class="status-pill fail">Failed</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ entry.ip }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="empty-note">No sign-ins recorded yet.</p>
+        {% endif %}
+    </div>
+
+    <footer>{{ settings.shop_name }} · Team · Manager access</footer>
+</div>
+</body>
+</html>

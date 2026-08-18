@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='csrf.js') }}"></script>
+<title>{{ settings.shop_name }}</title>
+<style>
+    :root {
+        --bg: #05070a;
+        --card: #12181a;
+        --card-hover: #161e20;
+        --teal: #17322f;
+        --teal-soft: #1f3d39;
+        --orange: #f0a63e;
+        --orange-light: #f7c169;
+        --text: #f0ece1;
+        --muted: #9a9689;
+        --border: rgba(245, 239, 227, 0.08);
+        --green: #34d399;
+        --red: #f87171;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        background: radial-gradient(circle at 15% 0%, #0f1d1b 0%, #05070a 45%), var(--bg);
+        color: var(--text);
+        padding: 1.5rem 1rem 4rem;
+    }
+    .container { max-width: 720px; margin: 0 auto; }
+
+    /* ---------- Header ---------- */
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.6rem; }
+    .brand { display: flex; align-items: center; gap: 0.7rem; }
+    .brand .mark {
+        width: 38px; height: 38px; background: var(--orange-light); border-radius: 10px;
+        display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+        box-shadow: 0 0 18px rgba(247,193,105,0.3);
+    }
+    .brand h1 { font-size: 1.05rem; margin: 0; font-family: Georgia, serif; color: var(--text); }
+    .brand .tagline { font-size: 0.66rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+    .logout-btn {
+        background: none; border: 1px solid var(--border); border-radius: 999px;
+        padding: 0.4rem 0.9rem; font-size: 0.78rem; color: var(--muted); cursor: pointer;
+    }
+    .logout-btn:hover { background: var(--card); color: var(--text); }
+    .nav-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .role-badge {
+        font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+        padding: 0.25rem 0.6rem; border-radius: 999px; color: var(--orange-light);
+        background: rgba(240,166,62,0.12); border: 1px solid rgba(240,166,62,0.2);
+    }
+    .nav-link {
+        font-size: 0.76rem; color: var(--muted); text-decoration: none; border: 1px solid var(--border);
+        border-radius: 999px; padding: 0.38rem 0.75rem;
+    }
+    .nav-link:hover { background: var(--card); color: var(--text); }
+
+    /* ---------- Status bar ---------- */
+    #status-bar {
+        padding: 0.6rem 1rem; border-radius: 999px; margin-bottom: 1.25rem; font-size: 0.82rem;
+        font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    #status-bar .dot { width: 7px; height: 7px; border-radius: 50%; }
+    #status-bar.ok { background: rgba(52,211,153,0.12); color: #6ee7b7; }
+    #status-bar.ok .dot { background: var(--green); box-shadow: 0 0 8px rgba(52,211,153,0.7); }
+    #status-bar.error { background: rgba(248,113,113,0.12); color: #fca5a5; }
+    #status-bar.error .dot { background: var(--red); }
+
+    /* ---------- Low stock banner ---------- */
+    #low-stock-banner {
+        background: rgba(240,166,62,0.1); border: 1px solid rgba(240,166,62,0.3);
+        border-radius: 14px; padding: 0.9rem 1.1rem; margin-bottom: 1.25rem;
+    }
+    #low-stock-banner .title { font-weight: 700; font-size: 0.85rem; color: var(--orange-light); margin-bottom: 0.4rem; }
+    #low-stock-banner ul { margin: 0; padding-left: 1.1rem; font-size: 0.83rem; color: var(--text); }
+    #low-stock-banner li { margin-bottom: 0.15rem; }
+
+    /* ---------- Receipt banner ---------- */
+    #receipt-banner {
+        background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.3);
+        border-radius: 14px; padding: 0.9rem 1.1rem; margin-bottom: 1.25rem;
+        display: none; align-items: center; justify-content: space-between; gap: 0.7rem; flex-wrap: wrap;
+    }
+    #receipt-banner .msg { font-size: 0.85rem; color: #6ee7b7; font-weight: 600; }
+    #receipt-banner a {
+        font-size: 0.8rem; color: #1c1305; background: var(--orange); text-decoration: none;
+        border-radius: 999px; padding: 0.4rem 0.9rem; font-weight: 700;
+    }
+
+    /* ---------- Hero (teal) ---------- */
+    .hero {
+        background: linear-gradient(160deg, var(--teal-soft), var(--teal) 70%);
+        color: #f5efe3; border-radius: 20px; padding: 1.75rem 1.5rem 1.5rem; margin-bottom: 1rem;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 0 1px rgba(240,166,62,0.06);
+    }
+    .hero .row { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 0.4rem; }
+    .eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.7rem; font-weight: 700; color: var(--orange-light); margin: 0 0 0.5rem; }
+    .hero .date { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: #b8b2a3; }
+    .hero h2 { font-family: Georgia, 'Times New Roman', serif; font-size: 1.7rem; line-height: 1.2; margin: 0 0 0.6rem; font-weight: 700; }
+    .hero p.sub { color: #b8b2a3; font-size: 0.88rem; line-height: 1.5; margin: 0 0 1.4rem; max-width: 460px; }
+
+    .hero-actions { display: flex; gap: 0.6rem; margin-bottom: 1.6rem; flex-wrap: wrap; }
+    .pill-btn {
+        border-radius: 999px; padding: 0.6rem 1.1rem; font-size: 0.85rem; font-weight: 600;
+        cursor: pointer; border: 1px solid rgba(245,239,227,0.2); display: inline-flex; align-items: center; gap: 0.4rem;
+        text-decoration: none;
+    }
+    .pill-btn.secondary { background: rgba(245,239,227,0.04); color: #f5efe3; }
+    .pill-btn.secondary:hover { background: rgba(245,239,227,0.1); }
+    .pill-btn.danger { background: transparent; color: #f0a98f; border-color: rgba(240,169,143,0.3); }
+    .pill-btn.danger:hover { background: rgba(240,169,143,0.1); }
+
+    .hero-stats { display: flex; gap: 1.6rem; flex-wrap: wrap; }
+    .hero-stats .item .total-label { text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.66rem; color: #b8b2a3; margin-bottom: 0.25rem; }
+    .hero-stats .item .total-value { font-family: Georgia, serif; font-size: 2rem; color: var(--orange-light); font-weight: 700; line-height: 1; }
+    .hero-stats .item .total-value.small { font-size: 1.6rem; }
+    .hero-stats .item .total-value.profit { color: var(--green); }
+    .hero-stats .item .total-value.loss { color: var(--red); }
+    .live-tag { font-size: 0.76rem; color: #9fd6a8; margin-top: 0.9rem; display: flex; align-items: center; gap: 0.4rem; }
+    .live-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px rgba(52,211,153,0.7); }
+
+    /* ---------- Stat cards ---------- */
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 1rem; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.1rem 1.2rem; }
+    .stat-card .eyebrow-sm { text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.65rem; color: var(--muted); margin-bottom: 0.4rem; }
+    .stat-card .stat-label { font-weight: 700; font-size: 0.92rem; margin-bottom: 0.5rem; color: var(--text); }
+    .stat-card .stat-value { font-family: Georgia, serif; font-size: 1.6rem; color: var(--text); }
+    .stat-card.profit .stat-value.up { color: var(--green); }
+    .stat-card.profit .stat-value.down { color: var(--red); }
+    .stat-card.profit .stat-value.flat { color: var(--orange-light); }
+
+    /* ---------- Mini lists (top products / expenses) ---------- */
+    .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem; margin-bottom: 1rem; }
+    .mini-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.1rem 1.2rem; }
+    .mini-card .mini-title { font-weight: 700; font-size: 0.85rem; margin-bottom: 0.7rem; display: flex; justify-content: space-between; align-items: center; }
+    .mini-card .mini-title a { font-size: 0.72rem; color: var(--orange-light); text-decoration: none; font-weight: 600; }
+    .mini-row { display: flex; justify-content: space-between; font-size: 0.82rem; padding: 0.32rem 0; border-bottom: 1px solid var(--border); }
+    .mini-row:last-child { border-bottom: none; }
+    .mini-row .name { color: var(--text); }
+    .mini-row .val { color: var(--muted); }
+    .mini-empty { font-size: 0.8rem; color: var(--muted); padding: 0.4rem 0; }
+
+    /* ---------- Chart card ---------- */
+    .chart-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.2rem 1.2rem 0.8rem; margin-bottom: 1rem; }
+    .chart-card .chart-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.8rem; }
+    .chart-card .chart-title { font-weight: 700; font-size: 0.92rem; }
+    .chart-card .chart-status { font-size: 0.78rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 999px; }
+    .chart-card .chart-status.up { color: var(--green); background: rgba(52,211,153,0.12); }
+    .chart-card .chart-status.down { color: var(--red); background: rgba(248,113,113,0.12); }
+    .chart-card .chart-status.flat { color: var(--orange-light); background: rgba(240,166,62,0.12); }
+    #profit-chart { width: 100%; height: 130px; display: block; }
+    .chart-empty { text-align: center; color: var(--muted); font-size: 0.85rem; padding: 2rem 0; }
+
+    /* ---------- Form card ---------- */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.5rem; margin-bottom: 1rem; }
+    .card .eyebrow.red { color: #e08a5c; }
+    .card h3 { font-family: Georgia, serif; font-size: 1.5rem; margin: 0 0 0.3rem; color: var(--text); }
+    .card .desc { color: var(--muted); font-size: 0.88rem; margin: 0 0 1.3rem; }
+
+    label { display: block; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.35rem; }
+    .field { margin-bottom: 1rem; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
+    input, select {
+        width: 100%; padding: 0.7rem 0.85rem; border: 1px solid var(--border); border-radius: 10px;
+        background: #0d1214; font-size: 0.95rem; color: var(--text);
+    }
+    input::placeholder { color: #6b6a63; }
+    input:focus, select:focus { outline: none; border-color: var(--orange); }
+    .stock-hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+
+    .add-basket-btn {
+        width: 100%; padding: 0.75rem; border: 1px solid rgba(240,166,62,0.35); border-radius: 999px;
+        background: rgba(240,166,62,0.1); color: var(--orange-light); font-weight: 700; font-size: 0.88rem; cursor: pointer;
+        margin-top: 0.2rem;
+    }
+    .add-basket-btn:hover { background: rgba(240,166,62,0.18); }
+
+    /* ---------- Basket ---------- */
+    #basket-list { margin: 1rem 0; }
+    .basket-row { display: flex; justify-content: space-between; align-items: center; padding: 0.55rem 0; border-bottom: 1px solid var(--border); font-size: 0.87rem; }
+    .basket-row .b-name { flex: 1; }
+    .basket-row .b-qty { color: var(--muted); margin: 0 0.6rem; }
+    .basket-row .b-total { font-weight: 700; margin-right: 0.6rem; min-width: 70px; text-align: right; }
+    .basket-row .b-remove { background: none; border: none; color: #fca5a5; cursor: pointer; font-size: 1rem; padding: 0 0.3rem; }
+    .basket-empty { color: var(--muted); font-size: 0.85rem; padding: 0.6rem 0; }
+    .basket-total-row { display: flex; justify-content: space-between; align-items: center; padding-top: 0.7rem; font-size: 1rem; font-weight: 700; }
+
+    .add-btn {
+        width: 100%; padding: 0.85rem; border: none; border-radius: 999px; background: var(--orange);
+        color: #1c1305; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+        margin-top: 0.9rem; box-shadow: 0 8px 24px rgba(240,166,62,0.25);
+    }
+    .add-btn:hover { background: var(--orange-light); }
+    .add-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    #form-error { color: #f87171; font-size: 0.85rem; margin-top: 0.6rem; min-height: 1.2em; }
+
+    /* ---------- Transactions ---------- */
+    .txn-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1rem; }
+    .txn-badge { background: #0d1214; border: 1px solid var(--border); border-radius: 999px; padding: 0.25rem 0.7rem; font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+    .empty-state { text-align: center; padding: 2.2rem 1rem; color: var(--muted); }
+    .empty-state .icon { width: 46px; height: 46px; border-radius: 12px; background: #0d1214; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.3rem; }
+    .empty-state .title { font-family: Georgia, serif; font-size: 1.15rem; color: var(--text); margin-bottom: 0.3rem; }
+    .empty-state .desc { font-size: 0.85rem; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.6rem 0.4rem; border-bottom: 1px solid var(--border); text-align: left; font-size: 0.88rem; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    tbody tr:hover { background: rgba(245,239,227,0.03); }
+    td.profit-up { color: var(--green); font-weight: 600; }
+    td.profit-down { color: var(--red); font-weight: 600; }
+
+    footer { text-align: center; margin-top: 2rem; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+    @media (max-width: 480px) {
+        .stat-grid, .mini-grid { grid-template-columns: 1fr; }
+        .field-row { grid-template-columns: 1fr; }
+        .hero-stats .item .total-value { font-size: 1.7rem; }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="brand">
+            <div class="mark">🧾</div>
+            <div>
+                <h1>{{ settings.shop_name }}</h1>
+                <div class="tagline">Shop Sales Desk</div>
+            </div>
+        </div>
+        <div class="nav-group">
+            <span class="role-badge">{{ user.display_name }} · {{ user.role }}</span>
+            <a href="{{ url_for('history') }}" class="nav-link">History</a>
+            {% if user.role in ('manager', 'owner') %}
+            <a href="{{ url_for('team_dashboard') }}" class="nav-link">Team</a>
+            {% endif %}
+            {% if user.role == 'owner' %}
+            <a href="{{ url_for('products_page') }}" class="nav-link">Products</a>
+            <a href="{{ url_for('expenses_page') }}" class="nav-link">Expenses</a>
+            <a href="{{ url_for('staff_page') }}" class="nav-link">Staff</a>
+            <a href="{{ url_for('reports_page') }}" class="nav-link">Reports</a>
+            <a href="{{ url_for('backstage') }}" class="nav-link">Backstage</a>
+            {% endif %}
+            <a href="{{ url_for('change_password') }}" class="nav-link">Password</a>
+            <form method="POST" action="{{ url_for('logout') }}" style="display:inline;">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="logout-btn">Sign out</button>
+            </form>
+        </div>
+    </header>
+
+    <div id="status-bar" class="ok"><span class="dot"></span><span id="status-text">Checking connection…</span></div>
+
+    <div id="low-stock-banner" style="display:none;"></div>
+    <div id="receipt-banner"><span class="msg" id="receipt-msg"></span><a href="#" id="receipt-link" target="_blank">🖨 View / print receipt</a></div>
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="row">
+            <p class="eyebrow">Today's Dashboard</p>
+            <span class="date" id="hero-date"></span>
+        </div>
+        <h2>Keep the counter moving.</h2>
+        <p class="sub">Ring up sales from the basket below — stock, receipts, and profit all update on their own.</p>
+
+        <div class="hero-actions">
+            {% if user.role == 'owner' %}
+            <a class="pill-btn secondary" href="{{ url_for('reports_page') }}">📊 Reports</a>
+            <button class="pill-btn danger" id="reset-btn">🗑 Clear today's sales</button>
+            {% endif %}
+        </div>
+
+        <div class="hero-stats">
+            <div class="item">
+                <div class="total-label">💰 Sales</div>
+                <div class="total-value" id="sum-total">{{ settings.currency }} 0.00</div>
+            </div>
+            <div class="item">
+                <div class="total-label">📦 Products sold</div>
+                <div class="total-value small" id="sum-units-hero">0</div>
+            </div>
+            <div class="item">
+                <div class="total-label">🧾 Transactions</div>
+                <div class="total-value small" id="sum-transactions-hero">0</div>
+            </div>
+            <div class="item">
+                <div class="total-label">📈 Net profit</div>
+                <div class="total-value small" id="sum-net-hero">{{ settings.currency }} 0.00</div>
+            </div>
+        </div>
+        <div class="live-tag"><span class="dot"></span> Live from your API</div>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stat-grid">
+        <div class="stat-card">
+            <div class="eyebrow-sm">Best Seller</div>
+            <div class="stat-label">Top item today</div>
+            <div class="stat-value" id="sum-best" style="font-size:1.1rem;">—</div>
+        </div>
+        <div class="stat-card profit">
+            <div class="eyebrow-sm">Gross vs Net</div>
+            <div class="stat-label" id="profit-label">Gross profit</div>
+            <div class="stat-value flat" id="sum-profit" style="font-size:1.1rem;">{{ settings.currency }} 0.00</div>
+        </div>
+    </div>
+
+    {% if user.role == 'owner' %}
+    <!-- Top products / Expenses -->
+    <div class="mini-grid">
+        <div class="mini-card">
+            <div class="mini-title">🏆 Top products today</div>
+            <div id="top-products-list"><div class="mini-empty">No sales yet.</div></div>
+        </div>
+        <div class="mini-card">
+            <div class="mini-title">🧮 Expenses today <a href="{{ url_for('expenses_page') }}">Add →</a></div>
+            <div id="expenses-mini"><div class="mini-empty">No expenses logged today.</div></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Profit chart -->
+    <div class="chart-card">
+        <div class="chart-head">
+            <span class="chart-title">How the day is going</span>
+            <span class="chart-status flat" id="chart-status">Break even</span>
+        </div>
+        <canvas id="profit-chart"></canvas>
+        <div class="chart-empty" id="chart-empty">Ring up a sale to see your profit trend here.</div>
+    </div>
+
+    <!-- Basket / checkout -->
+    <div class="card">
+        <p class="eyebrow red">New Sale</p>
+        <h3>Ring up a sale</h3>
+        <p class="desc">Add each item to the basket, then complete the sale to print a receipt.</p>
+
+        <div class="field">
+            <label for="product_id">Product</label>
+            <select id="product_id" name="product_id">
+                <option value="">Choose a product…</option>
+            </select>
+            <div class="stock-hint" id="stock-hint"></div>
+        </div>
+        <div class="field-row">
+            <div class="field">
+                <label for="unit_price">Selling price <span style="text-transform:none;">(editable)</span></label>
+                <input type="number" id="unit_price" min="0.01" step="0.01" placeholder="0.00">
+            </div>
+            <div class="field">
+                <label for="quantity">Quantity</label>
+                <input type="number" id="quantity" min="1" step="1" value="1">
+            </div>
+        </div>
+        <button type="button" class="add-basket-btn" id="add-basket-btn">+ Add to basket</button>
+        <div class="stock-hint" id="no-products-hint" style="display:none;">No products yet — ask the owner to add some in Products.</div>
+
+        <div id="basket-list"><div class="basket-empty">Basket is empty — add a product above.</div></div>
+        <div class="basket-total-row"><span>Basket total</span><span id="basket-total">{{ settings.currency }} 0.00</span></div>
+
+        <button type="button" class="add-btn" id="checkout-btn" disabled>✓ Complete sale →</button>
+        <div id="form-error"></div>
+    </div>
+
+    <!-- Transactions -->
+    <div class="card">
+        <div class="txn-header">
+            <div>
+                <p class="eyebrow red">The Paper Trail</p>
+                <h3>Today's transactions</h3>
+            </div>
+            <span class="txn-badge" id="txn-count">0 records</span>
+        </div>
+
+        <div id="empty-state" class="empty-state">
+            <div class="icon">📋</div>
+            <div class="title">No sales on the sheet yet.</div>
+            <div class="desc">Complete your first sale above and it will appear here instantly.</div>
+        </div>
+
+        <table id="txn-table" style="display:none;">
+            <thead>
+                <tr><th>Time</th><th>Item</th><th>Price</th><th>Qty</th><th>Total</th><th>Profit</th></tr>
+            </thead>
+            <tbody id="transactions-body"></tbody>
+        </table>
+    </div>
+
+    <footer>{{ settings.shop_name }} · Built for the busy moments</footer>
+</div>
+
+<script>
+const currency = {{ settings.currency | tojson }};
+const isOwner = {{ (user.role == 'owner') | tojson }};
+const statusBar = document.getElementById('status-bar');
+const statusText = document.getElementById('status-text');
+const formError = document.getElementById('form-error');
+const transactionsBody = document.getElementById('transactions-body');
+const emptyState = document.getElementById('empty-state');
+const txnTable = document.getElementById('txn-table');
+const txnCount = document.getElementById('txn-count');
+const chartCanvas = document.getElementById('profit-chart');
+const chartEmpty = document.getElementById('chart-empty');
+const chartStatus = document.getElementById('chart-status');
+const checkoutBtn = document.getElementById('checkout-btn');
+
+document.getElementById('hero-date').textContent = new Date().toLocaleDateString(undefined, {
+    weekday: 'long', month: 'short', day: 'numeric', year: 'numeric'
+});
+
+function setStatus(ok, message) {
+    statusText.textContent = message;
+    statusBar.className = ok ? 'ok' : 'error';
+}
+
+function fmt(n) { return `${escapeHtml(currency)} ${n.toFixed(2)}`; }
+
+function renderSummary(summary, financials) {
+    document.getElementById('sum-total').textContent = fmt(summary.total_sales);
+    document.getElementById('sum-units-hero').textContent = summary.total_units;
+    document.getElementById('sum-transactions-hero').textContent = summary.num_transactions;
+    document.getElementById('sum-best').textContent = summary.best_selling_item || '—';
+
+    const netEl = document.getElementById('sum-net-hero');
+    netEl.textContent = fmt(financials.net_profit);
+    netEl.className = 'total-value small ' + (financials.net_profit > 0 ? 'profit' : (financials.net_profit < 0 ? 'loss' : ''));
+
+    const profitEl = document.getElementById('sum-profit');
+    const labelEl = document.getElementById('profit-label');
+    profitEl.textContent = fmt(summary.total_profit);
+    profitEl.classList.remove('up', 'down', 'flat');
+    if (summary.profit_status === 'profit') {
+        profitEl.classList.add('up');
+        labelEl.textContent = 'Gross profit (before expenses)';
+    } else if (summary.profit_status === 'loss') {
+        profitEl.classList.add('down');
+        labelEl.textContent = 'Gross loss (before expenses)';
+    } else {
+        profitEl.classList.add('flat');
+        labelEl.textContent = 'Gross profit (before expenses)';
+    }
+}
+
+function renderTransactions(transactions) {
+    txnCount.textContent = `${transactions.length} record${transactions.length === 1 ? '' : 's'}`;
+
+    if (!transactions.length) {
+        emptyState.style.display = 'block';
+        txnTable.style.display = 'none';
+    } else {
+        emptyState.style.display = 'none';
+        txnTable.style.display = 'table';
+
+        transactionsBody.innerHTML = transactions.slice().reverse().map(t => {
+            const profit = t.profit || 0;
+            const cls = profit > 0 ? 'profit-up' : (profit < 0 ? 'profit-down' : '');
+            return `
+            <tr>
+                <td>${escapeHtml((t.ts || '').split(' ')[1] || t.ts)}</td>
+                <td>${escapeHtml(t.item)}</td>
+                <td>${t.unit_price.toFixed(2)}</td>
+                <td>${t.quantity}</td>
+                <td>${t.line_total.toFixed(2)}</td>
+                <td class="${cls}">${profit.toFixed(2)}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    renderChart(transactions);
+}
+
+function renderLowStock(lowStock) {
+    const banner = document.getElementById('low-stock-banner');
+    if (!lowStock || !lowStock.length) {
+        banner.style.display = 'none';
+        return;
+    }
+    banner.style.display = 'block';
+    banner.innerHTML = '<div class="title">⚠️ Low stock</div><ul>' +
+        lowStock.map(p => `<li>${escapeHtml(p.name)} — ${p.stock_qty} remaining (min ${p.min_stock})</li>`).join('') +
+        '</ul>';
+}
+
+function renderTopProducts(topProducts) {
+    const el = document.getElementById('top-products-list');
+    if (!el) return;
+    if (!topProducts || !topProducts.length) {
+        el.innerHTML = '<div class="mini-empty">No sales yet.</div>';
+        return;
+    }
+    el.innerHTML = topProducts.slice(0, 5).map(p => `
+        <div class="mini-row"><span class="name">${escapeHtml(p.item)}</span><span class="val">${p.units} sold</span></div>
+    `).join('');
+}
+
+function renderExpensesMini(expensesTotal, expenseCount) {
+    const el = document.getElementById('expenses-mini');
+    if (!el) return;
+    if (!expenseCount) {
+        el.innerHTML = '<div class="mini-empty">No expenses logged today.</div>';
+        return;
+    }
+    el.innerHTML = `<div class="mini-row"><span class="name">${expenseCount} entr${expenseCount === 1 ? 'y' : 'ies'}</span><span class="val">${fmt(expensesTotal)}</span></div>`;
+}
+
+let productsCache = [];
+
+async function loadProducts() {
+    const select = document.getElementById('product_id');
+    const noProductsHint = document.getElementById('no-products-hint');
+    try {
+        const res = await fetch('/api/products');
+        if (res.status === 401) { window.location.href = '/login'; return; }
+        const data = await res.json();
+        productsCache = data.products || [];
+
+        select.innerHTML = '<option value="">Choose a product…</option>' +
+            productsCache.map(p => `<option value="${p.id}">${escapeHtml(p.name)} — ${p.stock_qty} in stock</option>`).join('');
+
+        noProductsHint.style.display = productsCache.length ? 'none' : 'block';
+    } catch (err) {
+        // Leave the dropdown as-is; the status bar already reports connection issues.
+    }
+}
+
+document.getElementById('product_id').addEventListener('change', (e) => {
+    const product = productsCache.find(p => String(p.id) === e.target.value);
+    const stockHint = document.getElementById('stock-hint');
+    const priceInput = document.getElementById('unit_price');
+    const qtyInput = document.getElementById('quantity');
+    if (product) {
+        priceInput.value = product.selling_price;
+        qtyInput.max = product.stock_qty;
+        stockHint.textContent = `${product.stock_qty} in stock · cost ${product.cost_price.toFixed(2)}`;
+    } else {
+        stockHint.textContent = '';
+        qtyInput.removeAttribute('max');
+    }
+});
+
+// ---------------------------------------------------------------------------
+// Basket
+// ---------------------------------------------------------------------------
+let basket = [];
+
+function basketQtyFor(productId) {
+    return basket.filter(l => l.product_id === productId).reduce((sum, l) => sum + l.quantity, 0);
+}
+
+function renderBasket() {
+    const listEl = document.getElementById('basket-list');
+    const totalEl = document.getElementById('basket-total');
+
+    if (!basket.length) {
+        listEl.innerHTML = '<div class="basket-empty">Basket is empty — add a product above.</div>';
+        totalEl.textContent = fmt(0);
+        checkoutBtn.disabled = true;
+        return;
+    }
+
+    listEl.innerHTML = basket.map((l, i) => `
+        <div class="basket-row">
+            <span class="b-name">${escapeHtml(l.name)}</span>
+            <span class="b-qty">×${l.quantity}</span>
+            <span class="b-total">${fmt(l.unit_price * l.quantity)}</span>
+            <button class="b-remove" onclick="removeBasketLine(${i})">✕</button>
+        </div>
+    `).join('');
+
+    const total = basket.reduce((sum, l) => sum + l.unit_price * l.quantity, 0);
+    totalEl.textContent = fmt(total);
+    checkoutBtn.disabled = false;
+}
+
+function removeBasketLine(index) {
+    basket.splice(index, 1);
+    renderBasket();
+}
+
+document.getElementById('add-basket-btn').addEventListener('click', () => {
+    formError.textContent = '';
+    const select = document.getElementById('product_id');
+    const productId = parseInt(select.value, 10);
+    const unitPrice = parseFloat(document.getElementById('unit_price').value);
+    const quantity = parseInt(document.getElementById('quantity').value, 10);
+    const product = productsCache.find(p => p.id === productId);
+
+    if (!product) { formError.textContent = 'Choose a product first.'; return; }
+    if (!quantity || quantity <= 0) { formError.textContent = 'Quantity must be at least 1.'; return; }
+    if (!unitPrice || unitPrice <= 0) { formError.textContent = 'Selling price must be greater than 0.'; return; }
+
+    const alreadyInBasket = basketQtyFor(productId);
+    if (alreadyInBasket + quantity > product.stock_qty) {
+        formError.textContent = `Only ${product.stock_qty} left in stock for ${escapeHtml(product.name)}.`;
+        return;
+    }
+
+    basket.push({ product_id: productId, name: product.name, unit_price: unitPrice, quantity });
+    renderBasket();
+
+    select.value = '';
+    document.getElementById('unit_price').value = '';
+    document.getElementById('quantity').value = 1;
+    document.getElementById('stock-hint').textContent = '';
+});
+
+checkoutBtn.addEventListener('click', async () => {
+    if (!basket.length) return;
+    formError.textContent = '';
+    checkoutBtn.disabled = true;
+
+    try {
+        const res = await fetch('/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ lines: basket.map(l => ({ product_id: l.product_id, unit_price: l.unit_price, quantity: l.quantity })) })
+        });
+        if (res.status === 401) { window.location.href = '/login'; return; }
+        const data = await res.json();
+
+        if (!res.ok) {
+            formError.textContent = data.error || 'Could not complete sale.';
+            checkoutBtn.disabled = false;
+            return;
+        }
+
+        renderSummary(data.summary, data.financials);
+        renderTransactions(data.transactions);
+        renderLowStock(data.low_stock);
+        renderTopProducts(data.top_products);
+        showReceiptBanner(data.receipt);
+        await loadProducts();
+
+        basket = [];
+        renderBasket();
+        setStatus(true, 'Connected — live updates working');
+    } catch (err) {
+        setStatus(false, 'Cannot reach the server. Your sale was not saved — try again.');
+        checkoutBtn.disabled = false;
+    }
+});
+
+function showReceiptBanner(receipt) {
+    const banner = document.getElementById('receipt-banner');
+    document.getElementById('receipt-msg').textContent = `Sale completed ✓ — ${fmt(receipt.total)} (${receipt.lines.length} item${receipt.lines.length === 1 ? '' : 's'})`;
+    document.getElementById('receipt-link').href = `/receipt/${escapeHtml(receipt.receipt_id)}`;
+    banner.style.display = 'flex';
+}
+
+function renderChart(transactions) {
+    if (!transactions.length) {
+        chartCanvas.style.display = 'none';
+        chartEmpty.style.display = 'block';
+        chartStatus.textContent = 'Break even';
+        chartStatus.className = 'chart-status flat';
+        return;
+    }
+    chartCanvas.style.display = 'block';
+    chartEmpty.style.display = 'none';
+
+    let running = 0;
+    const points = transactions.map(t => {
+        running += (t.profit || 0);
+        return running;
+    });
+
+    const last = points[points.length - 1];
+    if (last > 0) {
+        chartStatus.textContent = 'Trending up';
+        chartStatus.className = 'chart-status up';
+    } else if (last < 0) {
+        chartStatus.textContent = 'Trending down';
+        chartStatus.className = 'chart-status down';
+    } else {
+        chartStatus.textContent = 'Break even';
+        chartStatus.className = 'chart-status flat';
+    }
+
+    const dpr = window.devicePixelRatio || 1;
+    const cssWidth = chartCanvas.clientWidth || chartCanvas.parentElement.clientWidth;
+    const cssHeight = 130;
+    chartCanvas.width = cssWidth * dpr;
+    chartCanvas.height = cssHeight * dpr;
+    chartCanvas.style.width = cssWidth + 'px';
+    chartCanvas.style.height = cssHeight + 'px';
+
+    const ctx = chartCanvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+    const padding = 10;
+    const maxAbs = Math.max(...points.map(v => Math.abs(v)), 1);
+    const midY = cssHeight / 2;
+    const usableHeight = (cssHeight / 2) - padding;
+    const stepX = points.length > 1 ? (cssWidth - padding * 2) / (points.length - 1) : 0;
+
+    ctx.strokeStyle = 'rgba(245,239,227,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, midY);
+    ctx.lineTo(cssWidth, midY);
+    ctx.stroke();
+
+    ctx.beginPath();
+    points.forEach((v, i) => {
+        const x = padding + stepX * i;
+        const y = midY - (v / maxAbs) * usableHeight;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = last >= 0 ? '#34d399' : '#f87171';
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+
+    points.forEach((v, i) => {
+        const x = padding + stepX * i;
+        const y = midY - (v / maxAbs) * usableHeight;
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = v >= 0 ? '#34d399' : '#f87171';
+        ctx.fill();
+    });
+}
+
+async function refreshSummary() {
+    try {
+        const res = await fetch('/api/summary');
+        if (res.status === 401) { window.location.href = '/login'; return; }
+        if (!res.ok) throw new Error('Server error');
+        const data = await res.json();
+        renderSummary(data.summary, data.financials);
+        renderTransactions(data.transactions);
+        renderLowStock(data.low_stock);
+        renderTopProducts(data.top_products);
+        setStatus(true, 'Connected — live updates working');
+
+        if (isOwner) {
+            try {
+                const expRes = await fetch('/api/expenses?range=today');
+                if (expRes.ok) {
+                    const expData = await expRes.json();
+                    renderExpensesMini(expData.total, expData.expenses.length);
+                }
+            } catch (err) { /* non-critical */ }
+        }
+    } catch (err) {
+        setStatus(false, "Can't reach the server. Check that the app is running.");
+    }
+}
+
+const resetBtn = document.getElementById('reset-btn');
+if (resetBtn) {
+    resetBtn.addEventListener('click', async () => {
+        const confirmed = confirm("Clear today's sales and restore stock levels? This cannot be undone.");
+        if (!confirmed) return;
+
+        try {
+            const res = await fetch('/api/reset', { method: 'POST' });
+            if (res.status === 401) { window.location.href = '/login'; return; }
+            if (!res.ok) throw new Error('Server error');
+            const data = await res.json();
+            renderSummary(data.summary, data.financials);
+            renderTransactions(data.transactions);
+            renderLowStock(data.low_stock);
+            renderTopProducts(data.top_products);
+            document.getElementById('receipt-banner').style.display = 'none';
+            await loadProducts();
+            setStatus(true, 'Connected — live updates working');
+        } catch (err) {
+            setStatus(false, 'Cannot reach the server. Reset may not have completed.');
+        }
+    });
+}
+
+window.addEventListener('resize', () => refreshSummary());
+
+loadProducts();
+refreshSummary();
+setInterval(refreshSummary, 8000);
+</script>
+</body>
+</html>

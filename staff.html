@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='csrf.js') }}"></script>
+<title>{{ settings.shop_name }} — Staff performance</title>
+<style>
+    :root {
+        --bg: #05070a; --card: #12181a; --orange: #f0a63e; --orange-light: #f7c169;
+        --text: #f0ece1; --muted: #9a9689; --border: rgba(245, 239, 227, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; font-family: 'Segoe UI', Arial, sans-serif; color: var(--text);
+        background: radial-gradient(circle at 15% 0%, #0f1d1b 0%, #05070a 45%), var(--bg);
+        padding: 1.5rem 1rem 4rem;
+    }
+    .container { max-width: 760px; margin: 0 auto; }
+    header { margin-bottom: 1.25rem; }
+    .back-link { color: var(--muted); text-decoration: none; font-size: 0.85rem; }
+    .back-link:hover { color: var(--text); }
+    .owner-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.7rem 0 0.2rem; }
+    .owner-nav a {
+        font-size: 0.76rem; color: var(--muted); text-decoration: none; border: 1px solid var(--border);
+        border-radius: 999px; padding: 0.32rem 0.7rem;
+    }
+    .owner-nav a:hover { background: rgba(245,239,227,0.06); color: var(--text); }
+    .eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.7rem; font-weight: 700; color: var(--orange-light); margin: 0.8rem 0 0.4rem; }
+    h1.page-title { font-family: Georgia, serif; font-size: 1.7rem; margin: 0.2rem 0 0.3rem; }
+    .subtitle { color: var(--muted); font-size: 0.88rem; margin: 0 0 1.5rem; }
+
+    .filter-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+    .filter-btn {
+        border: 1px solid var(--border); background: var(--card); color: var(--muted);
+        border-radius: 999px; padding: 0.42rem 0.9rem; font-size: 0.8rem; cursor: pointer;
+    }
+    .filter-btn.active { background: var(--orange); color: #1c1305; border-color: var(--orange); font-weight: 700; }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.4rem; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+    .card-head h2 { font-family: Georgia, serif; font-size: 1.2rem; margin: 0; }
+    .download-group { display: flex; gap: 0.4rem; }
+    .download-link { font-size: 0.78rem; color: var(--orange-light); text-decoration: none; border: 1px solid rgba(240,166,62,0.25); border-radius: 999px; padding: 0.35rem 0.75rem; }
+    .download-link:hover { background: rgba(240,166,62,0.1); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.7rem 0.5rem; border-bottom: 1px solid var(--border); text-align: left; font-size: 0.9rem; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .rank { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(240,166,62,0.15); color: var(--orange-light); font-size: 0.72rem; font-weight: 700; margin-right: 0.5rem; }
+    .empty-note { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 1.5rem 0; }
+    footer { text-align: center; margin-top: 2rem; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <a href="{{ url_for('index') }}" class="back-link">← Back to the desk</a>
+        <p class="eyebrow">Owner Only</p>
+        <h1 class="page-title">Staff performance</h1>
+        <p class="subtitle">Who's ringing up the most sales.</p>
+        {% include "_owner_nav.html" %}
+    </header>
+
+    <div class="filter-row" id="filter-row">
+        <button class="filter-btn" data-range="today">Today</button>
+        <button class="filter-btn" data-range="yesterday">Yesterday</button>
+        <button class="filter-btn" data-range="week">This week</button>
+        <button class="filter-btn" data-range="month">This month</button>
+        <button class="filter-btn" data-range="all">All time</button>
+    </div>
+
+    <div class="card">
+        <div class="card-head">
+            <h2>Leaderboard</h2>
+            <div class="download-group">
+                <a href="#" class="download-link" id="dl-csv">CSV</a>
+                <a href="#" class="download-link" id="dl-xlsx">Excel</a>
+                <a href="#" class="download-link" id="dl-pdf">PDF</a>
+            </div>
+        </div>
+        <table id="staff-table" style="display:none;">
+            <thead><tr><th>Staff</th><th>Sales</th><th>Transactions</th></tr></thead>
+            <tbody id="staff-body"></tbody>
+        </table>
+        <p class="empty-note" id="empty-note" style="display:none;">No sales in this range yet.</p>
+    </div>
+
+    <footer>{{ settings.shop_name }} · Staff performance</footer>
+</div>
+
+<script>
+const currency = {{ settings.currency | tojson }};
+let activeRange = 'today';
+
+const filterButtons = document.querySelectorAll('.filter-btn');
+filterButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        filterButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeRange = btn.dataset.range;
+        loadStaff();
+    });
+});
+
+async function loadStaff() {
+    const res = await fetch(`/api/staff?range=${activeRange}`);
+    if (res.status === 401) { window.location.href = '/login'; return; }
+    const data = await res.json();
+
+    document.getElementById('dl-csv').href = `/api/export/staff.csv?range=${activeRange}`;
+    document.getElementById('dl-xlsx').href = `/api/export/staff.xlsx?range=${activeRange}`;
+    document.getElementById('dl-pdf').href = `/api/export/staff.pdf?range=${activeRange}`;
+
+    const table = document.getElementById('staff-table');
+    const body = document.getElementById('staff-body');
+    const empty = document.getElementById('empty-note');
+
+    if (!data.staff.length) {
+        table.style.display = 'none';
+        empty.style.display = 'block';
+        return;
+    }
+    table.style.display = 'table';
+    empty.style.display = 'none';
+
+    body.innerHTML = data.staff.map((s, i) => `
+        <tr>
+            <td><span class="rank">${i + 1}</span>${escapeHtml(s.username)}</td>
+            <td>${escapeHtml(currency)} ${s.sales.toFixed(2)}</td>
+            <td>${s.transactions}</td>
+        </tr>`).join('');
+}
+
+document.querySelector('.filter-btn[data-range="today"]').classList.add('active');
+loadStaff();
+</script>
+</body>
+</html>

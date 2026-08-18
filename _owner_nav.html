@@ -1,0 +1,12 @@
+{# Shared owner-tools nav strip. Include with: {% include "_owner_nav.html" %}
+   Expects `user` in context; the caller's own page usually appears de-emphasized. #}
+<div class="owner-nav">
+    <a href="{{ url_for('index') }}">Desk</a>
+    <a href="{{ url_for('history') }}">History</a>
+    <a href="{{ url_for('products_page') }}">Products</a>
+    <a href="{{ url_for('expenses_page') }}">Expenses</a>
+    <a href="{{ url_for('staff_page') }}">Staff</a>
+    <a href="{{ url_for('reports_page') }}">Reports</a>
+    <a href="{{ url_for('team_dashboard') }}">Team</a>
+    <a href="{{ url_for('backstage') }}">Backstage</a>
+</div>

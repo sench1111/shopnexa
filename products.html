@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='csrf.js') }}"></script>
+<title>{{ settings.shop_name }} — Products</title>
+<style>
+    :root {
+        --bg: #05070a; --card: #12181a; --teal: #17322f; --teal-soft: #1f3d39;
+        --orange: #f0a63e; --orange-light: #f7c169; --text: #f0ece1; --muted: #9a9689;
+        --border: rgba(245, 239, 227, 0.08); --red: #f87171; --green: #34d399;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0; font-family: 'Segoe UI', Arial, sans-serif; color: var(--text);
+        background: radial-gradient(circle at 15% 0%, #0f1d1b 0%, #05070a 45%), var(--bg);
+        padding: 1.5rem 1rem 4rem;
+    }
+    .container { max-width: 760px; margin: 0 auto; }
+    header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.6rem; }
+    .back-link { color: var(--muted); text-decoration: none; font-size: 0.85rem; }
+    .back-link:hover { color: var(--text); }
+    .owner-nav { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.7rem 0 0.2rem; }
+    .owner-nav a {
+        font-size: 0.76rem; color: var(--muted); text-decoration: none; border: 1px solid var(--border);
+        border-radius: 999px; padding: 0.32rem 0.7rem;
+    }
+    .owner-nav a:hover { background: rgba(245,239,227,0.06); color: var(--text); }
+    .eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.7rem; font-weight: 700; color: var(--orange-light); margin: 0 0 0.4rem; }
+    h1.page-title { font-family: Georgia, serif; font-size: 1.7rem; margin: 0.2rem 0 0.3rem; }
+    .subtitle { color: var(--muted); font-size: 0.88rem; margin: 0 0 1.5rem; }
+
+    .msg { padding: 0.7rem 0.9rem; border-radius: 10px; font-size: 0.85rem; margin-bottom: 1.2rem; }
+    .msg.error { background: rgba(248,113,113,0.12); color: #fca5a5; border: 1px solid rgba(248,113,113,0.3); }
+    .msg.success { background: rgba(52,211,153,0.12); color: #6ee7b7; border: 1px solid rgba(52,211,153,0.3); }
+
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 1.5rem; margin-bottom: 1.2rem; }
+    .card h2 { font-family: Georgia, serif; font-size: 1.25rem; margin: 0 0 0.3rem; }
+    .card .desc { color: var(--muted); font-size: 0.85rem; margin: 0 0 1.2rem; }
+
+    label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.3rem; }
+    .field { margin-bottom: 0.9rem; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    .field-row-4 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+    input {
+        width: 100%; padding: 0.65rem 0.8rem; border: 1px solid var(--border); border-radius: 10px;
+        background: #0d1214; font-size: 0.9rem; color: var(--text);
+    }
+    input:focus { outline: none; border-color: var(--orange); }
+    button.primary {
+        padding: 0.7rem 1.2rem; border: none; border-radius: 999px; background: var(--orange);
+        color: #1c1305; font-weight: 700; font-size: 0.88rem; cursor: pointer; margin-top: 0.3rem;
+    }
+    button.primary:hover { background: var(--orange-light); }
+    button.secondary {
+        padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid var(--border);
+        background: transparent; color: var(--muted); font-size: 0.78rem; cursor: pointer;
+    }
+    button.secondary:hover { background: rgba(245,239,227,0.06); color: var(--text); }
+    button.danger-btn {
+        padding: 0.4rem 0.8rem; border-radius: 999px; border: 1px solid rgba(248,113,113,0.35);
+        background: rgba(248,113,113,0.08); color: #fca5a5; font-size: 0.78rem; cursor: pointer;
+    }
+    button.danger-btn:hover { background: rgba(248,113,113,0.18); }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.6rem 0.5rem; text-align: left; font-size: 0.85rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stock-pill { font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.55rem; border-radius: 999px; }
+    .stock-pill.ok { color: var(--green); background: rgba(52,211,153,0.12); }
+    .stock-pill.low { color: #fca5a5; background: rgba(248,113,113,0.14); }
+    .empty-note { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 1.5rem 0; }
+    .actions { display: flex; gap: 0.4rem; }
+    .edit-row td { padding-top: 0.8rem; padding-bottom: 0.8rem; background: rgba(245,239,227,0.02); }
+    footer { text-align: center; margin-top: 2rem; font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+
+    @media (max-width: 480px) {
+        .field-row, .field-row-4 { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div>
+            <a href="{{ url_for('index') }}" class="back-link">← Back to the desk</a>
+            <p class="eyebrow" style="margin-top:0.8rem;">Owner Only</p>
+            <h1 class="page-title">Products</h1>
+            {% include "_owner_nav.html" %}
+        </div>
+    </header>
+    <p class="subtitle">Add products, set prices and stock, and see what's running low.</p>
+
+    <div id="msg-area"></div>
+
+    <!-- Add product -->
+    <div class="card">
+        <h2>Add a product</h2>
+        <p class="desc">e.g. Coca-Cola 500ml — selling GH₵8, cost GH₵6, 42 in stock.</p>
+        <form id="add-form">
+            <div class="field">
+                <label for="name">Product name</label>
+                <input type="text" id="name" name="name" placeholder="e.g. Coca-Cola 500ml" required>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label for="selling_price">Selling price</label>
+                    <input type="number" id="selling_price" name="selling_price" min="0.01" step="0.01" required>
+                </div>
+                <div class="field">
+                    <label for="cost_price">Cost price</label>
+                    <input type="number" id="cost_price" name="cost_price" min="0" step="0.01" required>
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field">
+                    <label for="stock_qty">Stock quantity</label>
+                    <input type="number" id="stock_qty" name="stock_qty" min="0" step="1" required>
+                </div>
+                <div class="field">
+                    <label for="min_stock">Minimum stock level</label>
+                    <input type="number" id="min_stock" name="min_stock" min="0" step="1" value="5" required>
+                </div>
+            </div>
+            <button type="submit" class="primary">Add product</button>
+        </form>
+    </div>
+
+    <!-- Product list -->
+    <div class="card">
+        <h2>All products</h2>
+        <p class="desc">Tap Edit to change price or stock, or Remove to stop selling an item.</p>
+        <table id="product-table">
+            <thead><tr><th>Product</th><th>Sell</th><th>Cost</th><th>Stock</th><th></th></tr></thead>
+            <tbody id="product-body"></tbody>
+        </table>
+        <p class="empty-note" id="empty-note" style="display:none;">No products yet — add your first one above.</p>
+    </div>
+
+    <footer>{{ settings.shop_name }} · Products · Owner access only</footer>
+</div>
+
+<script>
+const initialProducts = {{ products | tojson }};
+const productBody = document.getElementById('product-body');
+const emptyNote = document.getElementById('empty-note');
+const msgArea = document.getElementById('msg-area');
+
+function showMsg(text, type) {
+    msgArea.innerHTML = `<div class="msg ${escapeHtml(type)}">${escapeHtml(text)}</div>`;
+    setTimeout(() => { msgArea.innerHTML = ''; }, 4000);
+}
+
+function renderProducts(products) {
+    if (!products.length) {
+        productBody.innerHTML = '';
+        emptyNote.style.display = 'block';
+        return;
+    }
+    emptyNote.style.display = 'none';
+
+    productBody.innerHTML = products.map(p => {
+        const low = p.stock_qty <= p.min_stock;
+        return `
+        <tr data-id="${p.id}">
+            <td>${escapeHtml(p.name)}</td>
+            <td>${p.selling_price.toFixed(2)}</td>
+            <td>${p.cost_price.toFixed(2)}</td>
+            <td><span class="stock-pill ${low ? 'low' : 'ok'}">${p.stock_qty}${low ? ' low' : ''}</span></td>
+            <td class="actions">
+                <button class="secondary" onclick="startEdit(${p.id})">Edit</button>
+                <button class="danger-btn" onclick="deleteProduct(${p.id})">Remove</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+function startEdit(id) {
+    const row = document.querySelector(`tr[data-id="${id}"]`);
+    const p = currentProducts.find(x => x.id === id);
+    if (!row || !p) return;
+    row.outerHTML = `
+    <tr class="edit-row" data-id="${id}">
+        <td colspan="5">
+            <div class="field-row-4">
+                <div class="field"><label>Name</label><input type="text" id="edit-name-${id}" value="${escapeHtml(p.name)}"></div>
+                <div class="field"><label>Sell price</label><input type="number" step="0.01" id="edit-sell-${id}" value="${p.selling_price}"></div>
+                <div class="field"><label>Cost price</label><input type="number" step="0.01" id="edit-cost-${id}" value="${p.cost_price}"></div>
+                <div class="field"><label>Stock</label><input type="number" step="1" id="edit-stock-${id}" value="${p.stock_qty}"></div>
+                <div class="field"><label>Min stock</label><input type="number" step="1" id="edit-min-${id}" value="${p.min_stock}"></div>
+            </div>
+            <div class="actions">
+                <button class="primary" onclick="saveEdit(${id})">Save</button>
+                <button class="secondary" onclick="loadProducts()">Cancel</button>
+            </div>
+        </td>
+    </tr>`;
+}
+
+async function saveEdit(id) {
+    const body = {
+        name: document.getElementById(`edit-name-${id}`).value.trim(),
+        selling_price: document.getElementById(`edit-sell-${id}`).value,
+        cost_price: document.getElementById(`edit-cost-${id}`).value,
+        stock_qty: document.getElementById(`edit-stock-${id}`).value,
+        min_stock: document.getElementById(`edit-min-${id}`).value,
+    };
+    try {
+        const res = await fetch(`/api/products/${id}`, {
+            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) { showMsg(data.error || 'Could not save changes.', 'error'); return; }
+        showMsg('Product updated.', 'success');
+        loadProducts();
+    } catch (err) {
+        showMsg('Cannot reach the server.', 'error');
+    }
+}
+
+async function deleteProduct(id) {
+    const product = currentProducts.find(p => p.id === id);
+    const name = product ? product.name : 'this product';
+    if (!confirm(`Remove ${name}? Past sales stay in your history, but it won't be sellable anymore.`)) return;
+    try {
+        const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) { showMsg(data.error || 'Could not remove product.', 'error'); return; }
+        showMsg(`Removed ${name}.`, 'success');
+        loadProducts();
+    } catch (err) {
+        showMsg('Cannot reach the server.', 'error');
+    }
+}
+
+let currentProducts = initialProducts;
+
+async function loadProducts() {
+    try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        currentProducts = data.products || [];
+        renderProducts(currentProducts);
+    } catch (err) {
+        showMsg('Cannot reach the server.', 'error');
+    }
+}
+
+document.getElementById('add-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = {
+        name: document.getElementById('name').value.trim(),
+        selling_price: document.getElementById('selling_price').value,
+        cost_price: document.getElementById('cost_price').value,
+        stock_qty: document.getElementById('stock_qty').value,
+        min_stock: document.getElementById('min_stock').value,
+    };
+    try {
+        const res = await fetch('/api/products', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) { showMsg(data.error || 'Could not add product.', 'error'); return; }
+        showMsg(`Added ${escapeHtml(body.name)}.`, 'success');
+        e.target.reset();
+        document.getElementById('min_stock').value = 5;
+        loadProducts();
+    } catch (err) {
+        showMsg('Cannot reach the server.', 'error');
+    }
+});
+
+renderProducts(currentProducts);
+</script>
+</body>
+</html>

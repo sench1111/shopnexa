@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<script src="{{ url_for('static', filename='csrf.js') }}"></script>
+<title>ShopNexa — Sign in</title>
+<style>
+    :root {
+        --bg: #05070a;
+        --card: #fffdf9;
+        --teal: #17322f;
+        --teal-soft: #1f3d39;
+        --orange: #f0a63e;
+        --orange-light: #f7c169;
+        --text: #1f2a24;
+        --muted: #8a8478;
+        --border: #ece2cf;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 20% 15%, #0f1d1b 0%, #05070a 55%), var(--bg);
+        font-family: 'Segoe UI', Arial, sans-serif;
+        color: var(--text);
+        padding: 1.5rem;
+    }
+    .login-card {
+        width: 100%;
+        max-width: 380px;
+        background: var(--teal);
+        border-radius: 20px;
+        padding: 2.5rem 2rem;
+        color: #f5efe3;
+        box-shadow: 0 0 0 1px rgba(240,166,62,0.08), 0 25px 60px rgba(0,0,0,0.55), 0 0 40px rgba(240,166,62,0.06);
+    }
+    .mark {
+        width: 44px; height: 44px;
+        background: var(--orange-light);
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 0 24px rgba(247,193,105,0.35);
+    }
+    .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--orange-light);
+        margin: 0 0 0.5rem;
+    }
+    h1 {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 1.9rem;
+        line-height: 1.2;
+        margin: 0 0 0.6rem;
+    }
+    .subtitle {
+        color: #c9c2b2;
+        font-size: 0.92rem;
+        line-height: 1.5;
+        margin: 0 0 2rem;
+    }
+    label {
+        display: block;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #c9c2b2;
+        margin-bottom: 0.4rem;
+    }
+    .field { margin-bottom: 1.1rem; }
+    input {
+        width: 100%;
+        padding: 0.8rem 0.9rem;
+        border: 1px solid rgba(245, 239, 227, 0.18);
+        border-radius: 10px;
+        background: rgba(245, 239, 227, 0.06);
+        color: #f5efe3;
+        font-size: 0.95rem;
+    }
+    input::placeholder { color: #8f9691; }
+    input:focus {
+        outline: none;
+        border-color: var(--orange-light);
+        background: rgba(245, 239, 227, 0.1);
+    }
+    button {
+        width: 100%;
+        margin-top: 0.75rem;
+        padding: 0.85rem 1rem;
+        border: none;
+        border-radius: 999px;
+        background: var(--orange);
+        color: #1f2a24;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+        transition: background 0.15s ease;
+    }
+    button:hover { background: var(--orange-light); }
+    .error {
+        background: rgba(220, 90, 60, 0.15);
+        border: 1px solid rgba(220, 90, 60, 0.4);
+        color: #f3b8a6;
+        padding: 0.7rem 0.9rem;
+        border-radius: 10px;
+        font-size: 0.85rem;
+        margin-bottom: 1.25rem;
+    }
+    .hint {
+        margin-top: 1.75rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid rgba(245, 239, 227, 0.12);
+        font-size: 0.78rem;
+        color: #8f9691;
+        letter-spacing: 0.02em;
+    }
+</style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="mark">🧾</div>
+        <p class="eyebrow">ShopNexa</p>
+        <h1>Welcome back to the counter.</h1>
+        <p class="subtitle">Sign in to record today's sales and keep the running totals — and profit — live.</p>
+
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('login') }}">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="field">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" placeholder="manager" required autofocus>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit">Sign in →</button>
+        </form>
+
+        <p class="hint">
+    Shop sales desk · access is limited to staff on shift<br>
+    <a href="{{ url_for('reset_credentials') }}" style="color: #f7c169; text-decoration: none;">Emergency credential reset</a>
+</p>
+    </div>
+</body>
+</html>
