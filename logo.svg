@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="ShopNexa">
+<rect width="128" height="128" rx="28" fill="#17322f"/>
+<path d="M30 40h68v12H30zM36 58h56v34H36z" fill="#f0a63e"/>
+<path d="M45 66h38v7H45zm0 13h25v7H45z" fill="#17322f"/>
+<circle cx="91" cy="91" r="12" fill="#f7c169"/>
+</svg>
