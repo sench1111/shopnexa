@@ -1,14 +1,13 @@
-# Ahorklo Daily Sales Desk
+# ShopNexa
 
 A small web app for a shop owner to record sales, manage products and stock, track expenses,
-and see net profit — all backed by SQLite locally/with a Render disk, with optional PostgreSQL support.
+and see net profit — with automatic SQLite/PostgreSQL database selection so data can persist across restarts and deployments.
 
 ## What's in it
 
-- **Automatic database selection** — locally the app uses SQLite at `data/shop.db`.
-  On Render it uses SQLite at `/var/data/shop.db`, which is on the attached persistent disk.
-  If the environment provides `DATABASE_URL`, the same code automatically uses PostgreSQL instead.
-  You never select a database in the application.
+- **Automatic database selection** — the app uses SQLite locally (`./data/shop.db`), SQLite on Render at
+`DATA_DIR/shop.db` (on Render Free the included config uses writable `/tmp/shopnexa_data/shop.db`), or PostgreSQL automatically whenever `DATABASE_URL`
+is present. You do not change application routes when switching databases.
 - **Products** (`/products`, owner) — add/edit/delete products with selling price, cost price,
   stock quantity, and a minimum stock level.
 - **Automatic inventory** — selling a product decrements its stock automatically; a low-stock
@@ -34,7 +33,7 @@ and see net profit — all backed by SQLite locally/with a Render disk, with opt
 ## How it works
 
 - **Backend (`app.py`)** — a Flask app with a small JSON API. All arithmetic (totals, profit,
-  net profit, stock checks) happens server-side against the SQLite database — the frontend
+  net profit, stock checks) happens server-side against the selected database — the frontend
   only renders what the API returns.
 - **Frontend** — plain HTML/CSS/JS per page (no build step). The dashboard polls
   `/api/summary` every 8 seconds so totals stay live, with a status banner if the server can't
@@ -63,35 +62,43 @@ Three roles, per-account passwords (hashed, never stored in plain text):
   **Backstage** panel — manage every account (including changing anyone's role), see the
   full login history and a company-wide activity log, and edit shop name/currency.
 
-Default accounts (seeded once, on first run, if the `users` table is empty — see
-`DEFAULT_USERS` in `db.py`). **Set these via environment variables before the first run**;
-if you don't, the app falls back to the placeholder passwords shown below, which anyone who
-has read this file can guess:
+Default accounts (change these before sharing the project — see `DEFAULT_USERS` in `db.py`):
 
-| Username | Env var to set its password | Fallback if unset | Role |
-|---|---|---|---|
-| `employee` | `EMPLOYEE_PASSWORD` | Randomly generated locally | employee |
-| `manager` | `MANAGER_PASSWORD` | Randomly generated locally | manager |
-| `admin` | `OWNER_PASSWORD` | Randomly generated locally | owner |
+| Username | Password | Role |
+|---|---|---|
+| `employee` | `staff123` | employee |
+| `manager` | `sales123` | manager |
+| `ahorklo` | `backstage123` | owner |
 
-Sign in as `admin` to reach **Backstage**, where you can add accounts of any role, promote
+Sign in as `ahorklo` to reach **Backstage**, where you can add accounts of any role, promote
 or demote existing accounts, remove accounts, and see the full sign-in and activity history.
 Sign in as a manager to reach **Team**, a lighter-weight panel for onboarding employees
 without full owner access. Any signed-in user can change their own password from the
 **Password** link in the top nav.
 
+## Using PostgreSQL
+
+To use PostgreSQL, set `DATABASE_URL` to your PostgreSQL connection string before starting the app.
+For example:
+
+```powershell
+$env:DATABASE_URL = "postgresql://USER:PASSWORD@HOST:5432/DATABASE"
+python app.py
+```
+
+If `DATABASE_URL` is not set, the app automatically uses local SQLite instead.
+
 ## Running it locally
 
 ```bash
 python -m venv venv
-source venv/bin/activate      # Windows: venv\Scripts\activate
-pip install -r requirements.txt
+# Windows PowerShell can skip activation and call the venv's Python directly:
+# .\venv\Scripts\python.exe -m pip install -r requirements.txt
+python -m pip install -r requirements.txt
 python app.py
 ```
 
-Open **http://127.0.0.1:5000** in your browser. On the first local run, if you did not set the
-three password environment variables, the app generates random bootstrap passwords and prints
-them once in the terminal. Save them and change them after signing in.
+Open **http://127.0.0.1:5000** in your browser.
 
 ## Bonus: Git & GitHub
 
@@ -113,7 +120,7 @@ git push -u origin main
 
 1. Push the project to GitHub (above).
 2. On [render.com](https://render.com), create a **New Web Service** and connect the repo.
-3. Build command: `pip install -r requirements.txt`
+3. Build command: `python -m pip install -r requirements.txt`
 4. Start command: `gunicorn app:app` (already set in the included `Procfile`)
 5. Deploy — Render gives you a live URL to share.
 
@@ -136,18 +143,10 @@ workers.
   that changes every restart (signing everyone out) — that's fine for local dev, but a real
   deployment needs a fixed, secret value only you know, e.g.:
   `export SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_hex(32))")`
-- **Set `EMPLOYEE_PASSWORD`, `MANAGER_PASSWORD`, and `OWNER_PASSWORD`** before the first
-  production run. The application contains **no hardcoded production passwords**. If an
-  existing production database is upgraded without those variables, all existing accounts
-  are forced through the Change Password screen before normal use.
-- Passwords must be at least 10 characters. Use unique, randomly generated passwords for
-  production accounts.
-- **Serve it over HTTPS.** The session cookie is marked `Secure` by default (see
-  `FORCE_HTTPS` in `app.py`), so sign-in won't work over plain HTTP in production — this is
-  intentional. Render/Railway/Fly all terminate TLS for you automatically.
-- **Leave `FLASK_DEBUG` unset.** The app only enables Flask's interactive debugger — which
-  allows remote code execution — when `FLASK_DEBUG=1` is explicitly set. Never set it on a
-  deployment reachable by anyone but you.
+- **Change the default accounts.** The app seeds `manager` / `sales123` and
+  `ahorklo` / `backstage123` on first run so there's something to log in with. Sign in as
+  the owner and either change these passwords (Change Password) or add new accounts and
+  remove the defaults from Backstage before giving this to a real shop.
 
 ## Notes for extending it
 
@@ -157,38 +156,54 @@ workers.
 
 
 
-## Security hardening in this release
+## Credential reset security
 
-- Production startup requires `SECRET_KEY` and, when the database is empty, all three bootstrap passwords.
-- No static demo passwords are embedded in the source code; local bootstrap passwords are randomly generated.
-- Existing production accounts are forced to change passwords when bootstrap credentials are not configured.
-- Login protection combines per-IP rate limiting with persistent per-account failed-login lockout.
-- Session cookies use `HttpOnly`, `SameSite=Lax`, `Secure` in production, and a 12-hour lifetime with refresh.
-- CSRF protection covers HTML forms and state-changing JSON requests.
-- A per-response CSP nonce protects inline scripts without `unsafe-inline` for JavaScript.
-- Database checkout uses atomic stock reservation to prevent overselling under concurrent requests.
-- Dynamic database/API values rendered into `innerHTML` are HTML-escaped.
-- Request bodies are capped at 2 MB and checkout quantities/basket size are bounded.
-- PostgreSQL and persistent Render SQLite selection remain automatic.
+Administrative password resets in Backstage require both an authenticated Owner session and the `CREDENTIAL_RESET_TOKEN` environment secret. The supplied `render.yaml` generates this token automatically in Render. Keep it private and never commit a manually chosen token to source control.
 
 
-## Emergency credential reset
+### Automatic product artwork
+Product artwork is generated by ShopNexa from each product name. No product-image folder needs to be copied to GitHub. The server automatically selects an appropriate illustrated category and generates the SVG at `/product-image?name=...`.
 
-If an existing Owner, Manager, or Employee account's password is forgotten,
-use `/reset-credentials` instead of deleting the database.
+### Product images and mobile/desktop UI
 
-Before using it in production, set a strong random environment variable:
+ShopNexa generates a local product illustration from each product's name/category. No product image files need to be copied to GitHub. On the Products page, tap/click a product image to open its editor. The layout switches between a desktop sidebar and a phone-friendly drawer automatically.
 
-`CREDENTIAL_RESET_TOKEN`
+The current visual system uses a charcoal/espresso background with burnt-orange accents and cream text; the previous white/blue dashboard styling is not used.
 
-Use at least 32 random characters. The reset token is submitted only over
-HTTPS and is invalidated after one successful password reset. Rotate the
-environment variable to enable another emergency reset.
+## ShopNexa Work AI
 
-The reset page can reset only the fixed bootstrap accounts:
-`admin` (Owner), `manager`, and `employee`. It does not delete sales,
-products, expenses, staff records, or other database data.
+ShopNexa includes a role-aware Work AI at `/work-ai`.
 
-The existing `OWNER_PASSWORD`, `MANAGER_PASSWORD`, and `EMPLOYEE_PASSWORD`
-variables remain bootstrap credentials for a brand-new empty database; they
-do not overwrite passwords in an already-populated database.
+- Uses the live ShopNexa database for sales, products, stock and permitted staff activity.
+- Owner-only business analysis includes profit, expenses, staff activity, trends and reports.
+- Managers/employees are restricted to the information allowed by their role.
+- Questions that need current external information automatically trigger web search.
+- Web search works through the built-in DuckDuckGo HTML fallback; set `TAVILY_API_KEY` in Render for a more reliable production search provider.
+- The AI never receives passwords, CSRF tokens or session secrets.
+
+### Optional Render environment variable
+
+`TAVILY_API_KEY` — optional. If set, Work AI uses Tavily for web search and falls back safely if the provider is unavailable.
+
+## Final sales/product synchronization fix
+- The Sales page now server-renders the current active product list, so the native mobile product selector is populated even before JavaScript finishes loading.
+- `/api/products` is explicitly no-cache and returns the same live database records used by the Products page.
+- Sales refreshes the product list automatically every 4 seconds and when the page becomes visible, so products added or edited elsewhere become available without a manual reload.
+- The selected product, price and stock limit are refreshed from the live product record.
+- Existing checkout stock validation remains enforced server-side.
+
+### Work AI Media Studio
+
+Work AI now includes a built-in Media Studio for creating original business artwork and short videos. It uses the server-side OpenAI API: GPT Image 2 for images and Sora 2 for video jobs. Image generation returns a generated PNG to the authenticated browser; video generation is asynchronous and the UI polls the job until it is ready. The API key is stored only as the Render `OPENAI_API_KEY` environment secret and is never exposed to browser JavaScript.
+
+Required Render variable:
+
+`OPENAI_API_KEY` — required to enable image/video generation.
+
+Optional variables:
+
+`WORK_AI_IMAGE_MODEL` — defaults to `gpt-image-2`.
+`WORK_AI_VIDEO_MODEL` — defaults to `sora-2`.
+`MEDIA_DIR` — optional persistent directory for generated media; when using Render persistent disk, point this at a directory on that disk.
+
+Generated video jobs use the Sora video API and can take time to render. The UI shows progress and embeds the completed MP4 in the Work AI page.
